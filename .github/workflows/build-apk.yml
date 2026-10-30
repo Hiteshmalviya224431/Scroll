@@ -14,11 +14,14 @@ jobs:
 
       - name: Extract Project Zip
         run: |
-          for z in *.zip; do
-            if [ -f "$z" ]; then
-              unzip -q -o "$z"
-            fi
-          done
+          ls -la
+          ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No .zip file found in repository! Please upload scroll_android_project.zip via Add file -> Upload files."
+            exit 1
+          fi
+          echo "Extracting $ZIP_FILE..."
+          unzip -q -o "$ZIP_FILE"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -32,14 +35,11 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build Debug APK
-        run: |
-          if [ -d "Scroll" ]; then
-            cd Scroll
-          fi
-          gradle assembleDebug --no-daemon
+        working-directory: Scroll
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload Scroll APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Scroll-debug-apk
-          path: "**/app/build/outputs/apk/debug/app-debug.apk"
+          path: Scroll/app/build/outputs/apk/debug/app-debug.apk
